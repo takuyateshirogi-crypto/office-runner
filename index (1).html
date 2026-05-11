@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Office Runner">
+<title>Office Runner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f0f0f;--surface:#161616;--surface2:#1e1e1e;--surface3:#252525;
+  --border:#2a2a2a;--border2:#333;
+  --text:#e8e8e8;--text2:#888;--text3:#555;
+  --green:#4ade80;--green-dim:#1a3d27;
+  --amber:#fbbf24;--amber-dim:#3d2e0a;
+  --blue:#60a5fa;--blue-dim:#0f2040;
+  --purple:#a78bfa;--purple-dim:#1e1535;
+  --font-mono:'DM Mono',monospace;
+  --font-body:'Noto Sans JP',sans-serif;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.6}
+.app{max-width:600px;margin:0 auto;padding:1.5rem 1rem 6rem}
+.header{display:flex;align-items:flex-start;gap:12px;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.header-left{flex:1}
+.header-title{font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:0.12em;margin-bottom:2px}
+.header-date{font-family:var(--font-mono);font-size:18px;font-weight:500;color:var(--text)}
+.header-actions{display:flex;gap:6px;margin-top:6px}
+.btn-tab{font-family:var(--font-mono);font-size:11px;padding:6px 13px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;-webkit-appearance:none}
+.btn-tab.active{background:var(--green-dim);color:var(--green);border-color:var(--green-dim)}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}
+.stat-val{font-family:var(--font-mono);font-size:22px;font-weight:500}
+.stat-lbl{font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:0.08em}
+.progress-bar{height:2px;background:var(--border);border-radius:2px;margin-bottom:1.5rem;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width 0.4s ease}
+.section-header{display:flex;align-items:center;gap:8px;margin:1.2rem 0 0.5rem}
+.section-label{font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:0.1em;white-space:nowrap}
+.section-line{flex:1;height:1px;background:var(--border)}
+.todo-row{display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:10px;padding:10px 10px;border-radius:8px;margin-bottom:5px;cursor:pointer;user-select:none;transition:background 0.12s}
+.todo-row:active{background:var(--surface2)}
+.todo-row.done{opacity:0.38}
+.todo-row.done .todo-text{text-decoration:line-through;color:var(--text3)}
+.todo-illus{width:48px;height:48px;flex-shrink:0;border-radius:6px;background:var(--surface2);display:flex;align-items:center;justify-content:center}
+.todo-illus svg{display:block}
+.todo-main{display:flex;flex-direction:column;gap:3px;min-width:0}
+.todo-text{font-size:13px;color:var(--text);line-height:1.4}
+.todo-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.cb{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all 0.15s}
+.cb.checked{background:var(--green);border-color:var(--green);color:#000}
+.cat-badge{font-family:var(--font-mono);font-size:10px;padding:2px 7px;border-radius:3px;white-space:nowrap}
+.cat-run{background:var(--green-dim);color:var(--green)}
+.cat-body{background:var(--purple-dim);color:var(--purple)}
+.cat-water{background:var(--blue-dim);color:var(--blue)}
+.cat-work{background:var(--surface3);color:var(--text2)}
+.cat-lunch{background:var(--amber-dim);color:var(--amber)}
+.note-area{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border)}
+.note-label{font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px}
+textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:14px;padding:12px;resize:vertical;min-height:90px;outline:none;line-height:1.6;-webkit-appearance:none}
+textarea:focus{border-color:var(--border2)}
+.save-row{display:flex;justify-content:flex-end;align-items:center;margin-top:8px;gap:10px}
+.saved-msg{font-family:var(--font-mono);font-size:11px;color:var(--green);opacity:0;transition:opacity 0.3s}
+.saved-msg.show{opacity:1}
+.btn-save{font-family:var(--font-mono);font-size:12px;padding:9px 22px;background:var(--green-dim);color:var(--green);border:1px solid var(--green-dim);border-radius:6px;cursor:pointer;-webkit-appearance:none}
+.btn-save:active{background:var(--green);color:#000}
+.history-view{display:none}
+.history-view.active{display:block}
+.today-view.hidden{display:none}
+.hist-empty{font-family:var(--font-mono);font-size:12px;color:var(--text3);text-align:center;padding:3rem 0}
+.hist-day{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.hist-day-header{display:flex;align-items:center;gap:8px;padding:13px 14px;cursor:pointer;user-select:none}
+.hist-day-header:active{background:var(--surface2)}
+.hist-date{font-family:var(--font-mono);font-size:13px;font-weight:500;flex:1}
+.hist-count{font-family:var(--font-mono);font-size:11px;color:var(--text3)}
+.hist-pct{font-family:var(--font-mono);font-size:12px;color:var(--green);min-width:38px;text-align:right}
+.hist-bar{height:2px;background:var(--border);margin:0 14px}
+.hist-bar-fill{height:100%;background:var(--green)}
+.hist-body{padding:12px 14px;border-top:1px solid var(--border);display:none}
+.hist-body.open{display:block}
+.hist-note{font-size:12px;color:var(--text2);margin-top:10px;padding:10px 12px;background:var(--surface2);border-radius:6px;white-space:pre-wrap;border-left:2px solid var(--border2);line-height:1.6}
+.hist-items{display:flex;flex-wrap:wrap;gap:4px}
+.hist-item{font-size:11px;padding:3px 8px;border-radius:3px}
+.hist-item.done{background:var(--green-dim);color:var(--green)}
+.hist-item.miss{background:var(--surface3);color:var(--text3);text-decoration:line-through}
+.chevron{font-size:11px;color:var(--text3);transition:transform 0.2s}
+.chevron.open{transform:rotate(180deg)}
+.delete-btn{font-family:var(--font-mono);font-size:10px;color:var(--text3);background:transparent;border:1px solid var(--border);border-radius:3px;padding:3px 8px;cursor:pointer;-webkit-appearance:none}
+.delete-btn:active{color:#E24B4A;border-color:#E24B4A}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-title">OFFICE RUNNER</div>
+      <div class="header-date" id="hdate"></div>
+      <div class="header-actions">
+        <button class="btn-tab active" id="tab-today" onclick="showTab('today')">TODAY</button>
+        <button class="btn-tab" id="tab-hist" onclick="showTab('history')">HISTORY</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="today-view" id="today-view">
+    <div class="summary">
+      <div class="stat"><div class="stat-val" id="s-done" style="color:var(--green)">0</div><div class="stat-lbl">DONE</div></div>
+      <div class="stat"><div class="stat-val" id="s-total" style="color:var(--text2)">18</div><div class="stat-lbl">TOTAL</div></div>
+      <div class="stat"><div class="stat-val" id="s-pct" style="color:var(--amber)">0%</div><div class="stat-lbl">RATE</div></div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+    <div id="todo-list"></div>
+    <div class="note-area">
+      <div class="note-label">// NOTE — 今日の気づき・体感</div>
+      <textarea id="note-input" placeholder="今日のオフィスでの体感、気になったこと、足の状態など..."></textarea>
+      <div class="save-row">
+        <span class="saved-msg" id="saved-msg">saved.</span>
+        <button class="btn-save" onclick="saveDay()">SAVE DAY</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="history-view" id="history-view">
+    <div id="hist-list"></div>
+  </div>
+</div>
+
+<script>
+const ILLUS = {
+  t01: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 足指グーパー: 足のシルエット + 指が開いているイメージ -->
+    <ellipse cx="20" cy="28" rx="11" ry="7" fill="#1a3d27" stroke="#4ade80" stroke-width="1.2"/>
+    <!-- つま先5本 -->
+    <circle cx="11" cy="22" r="2" fill="#4ade80"/>
+    <circle cx="14.5" cy="20" r="2.2" fill="#4ade80"/>
+    <circle cx="19" cy="19.5" r="2.2" fill="#4ade80"/>
+    <circle cx="23.5" cy="20" r="2" fill="#4ade80"/>
+    <circle cx="27" cy="21.5" r="1.8" fill="#4ade80"/>
+    <!-- かかと -->
+    <ellipse cx="20" cy="33" rx="8" ry="4" fill="#1a3d27" stroke="#4ade80" stroke-width="1"/>
+  </svg>`,
+
+  t02: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 骨盤を立てて座る: 椅子+人物の側面 -->
+    <!-- 椅子 -->
+    <rect x="8" y="26" width="24" height="3" rx="1" fill="#333"/>
+    <line x1="10" y1="29" x2="10" y2="36" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+    <line x1="30" y1="29" x2="30" y2="36" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+    <!-- 背もたれ -->
+    <rect x="28" y="16" width="2.5" height="12" rx="1" fill="#333"/>
+    <!-- 人物 -->
+    <circle cx="18" cy="12" r="4" fill="#a78bfa"/>
+    <!-- 背骨まっすぐ -->
+    <line x1="18" y1="16" x2="18" y2="27" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- 腰 -->
+    <ellipse cx="18" cy="26" rx="5" ry="2" fill="#a78bfa"/>
+    <!-- 足 -->
+    <line x1="15" y1="28" x2="13" y2="36" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+    <line x1="21" y1="28" x2="23" y2="36" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+    <!-- 脊柱ライン強調 -->
+    <path d="M18 16 Q19 21 18 27" stroke="#4ade80" stroke-width="1" stroke-dasharray="2,2" fill="none"/>
+  </svg>`,
+
+  t03: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 水ボトル -->
+    <rect x="14" y="12" width="12" height="22" rx="3" fill="#0f2040" stroke="#60a5fa" stroke-width="1.3"/>
+    <!-- キャップ -->
+    <rect x="16" y="8" width="8" height="5" rx="2" fill="#60a5fa"/>
+    <!-- 水面 -->
+    <rect x="15.5" y="22" width="9" height="11" rx="2" fill="#1e4080"/>
+    <!-- 波線 -->
+    <path d="M15.5 22 Q18 20 20.5 22 Q23 20 25.5 22" stroke="#60a5fa" stroke-width="1" fill="none"/>
+    <!-- 飛沫 -->
+    <circle cx="28" cy="10" r="1.5" fill="#60a5fa" opacity="0.7"/>
+    <circle cx="31" cy="13" r="1" fill="#60a5fa" opacity="0.5"/>
+    <circle cx="29" cy="15" r="1" fill="#60a5fa" opacity="0.4"/>
+  </svg>`,
+
+  t04: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 腹圧アイソメトリクス: 座って腹に力を入れている -->
+    <!-- 椅子シルエット -->
+    <rect x="8" y="26" width="22" height="2.5" rx="1" fill="#333"/>
+    <!-- 人物 -->
+    <circle cx="19" cy="11" r="3.5" fill="#a78bfa"/>
+    <rect x="14" y="14.5" width="10" height="12" rx="3" fill="#a78bfa"/>
+    <!-- 腹部の力ライン -->
+    <path d="M14 20 Q19 17 24 20" stroke="#4ade80" stroke-width="1.5" fill="none"/>
+    <path d="M14 22.5 Q19 19.5 24 22.5" stroke="#4ade80" stroke-width="1.5" fill="none"/>
+    <!-- 足 -->
+    <line x1="16" y1="26.5" x2="14" y2="34" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+    <line x1="22" y1="26.5" x2="24" y2="34" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+    <!-- 矢印: 腹に向かって -->
+    <path d="M28 19 L25 20" stroke="#4ade80" stroke-width="1.2" marker-end="url(#arr)" stroke-linecap="round"/>
+    <defs><marker id="arr" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto"><polygon points="0,0 4,2 0,4" fill="#4ade80"/></marker></defs>
+  </svg>`,
+
+  t05: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- カーフレイズ: かかとを上げている足 -->
+    <!-- すね -->
+    <rect x="15" y="10" width="5" height="18" rx="2.5" fill="#4ade80"/>
+    <!-- ふくらはぎ -->
+    <ellipse cx="22" cy="20" rx="4" ry="9" fill="#1a3d27" stroke="#4ade80" stroke-width="1.2"/>
+    <!-- 足裏 (つま先立ち) -->
+    <ellipse cx="18" cy="29" rx="7" ry="3" fill="#4ade80"/>
+    <!-- かかと(浮いている) -->
+    <ellipse cx="13" cy="27" rx="3" ry="2" fill="#4ade80" opacity="0.3"/>
+    <!-- 上矢印 -->
+    <path d="M30 22 L30 10" stroke="#4ade80" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M27 13 L30 10 L33 13" stroke="#4ade80" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </svg>`,
+
+  t06: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 立ち上がって歩く -->
+    <!-- 人物(歩いている) -->
+    <circle cx="20" cy="9" r="4" fill="#888780"/>
+    <!-- 胴体 -->
+    <line x1="20" y1="13" x2="20" y2="24" stroke="#888780" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- 腕振り -->
+    <line x1="20" y1="16" x2="14" y2="21" stroke="#888780" stroke-width="2" stroke-linecap="round"/>
+    <line x1="20" y1="16" x2="26" y2="19" stroke="#888780" stroke-width="2" stroke-linecap="round"/>
+    <!-- 足(歩行) -->
+    <line x1="20" y1="24" x2="14" y2="34" stroke="#888780" stroke-width="2" stroke-linecap="round"/>
+    <line x1="20" y1="24" x2="26" y2="30" stroke="#888780" stroke-width="2" stroke-linecap="round"/>
+    <line x1="26" y1="30" x2="26" y2="36" stroke="#888780" stroke-width="2" stroke-linecap="round"/>
+    <!-- 足跡 -->
+    <ellipse cx="13" cy="36" rx="3" ry="1.5" fill="#555" opacity="0.8"/>
+    <ellipse cx="26" cy="37" rx="3" ry="1.5" fill="#555" opacity="0.5"/>
+  </svg>`,
+
+  t07: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 水分確認: チェック付きボトル -->
+    <rect x="13" y="13" width="11" height="20" rx="3" fill="#0f2040" stroke="#60a5fa" stroke-width="1.3"/>
+    <rect x="15" y="9" width="7" height="5" rx="2" fill="#60a5fa"/>
+    <rect x="14" y="25" width="9" height="7" rx="2" fill="#1e4080"/>
+    <!-- チェックマーク -->
+    <circle cx="28" cy="16" r="7" fill="#1a3d27" stroke="#4ade80" stroke-width="1.5"/>
+    <path d="M24 16 L27 19 L32 13" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </svg>`,
+
+  t08: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 食事: プレート+魚+野菜 -->
+    <ellipse cx="20" cy="26" rx="14" ry="9" fill="#3d2e0a" stroke="#fbbf24" stroke-width="1.2"/>
+    <!-- 魚 -->
+    <ellipse cx="17" cy="25" rx="6" ry="3.5" fill="#fbbf24"/>
+    <path d="M23 25 L27 22 L27 28 Z" fill="#fbbf24"/>
+    <circle cx="14" cy="24" r="1" fill="#3d2e0a"/>
+    <!-- 野菜(ブロッコリー風) -->
+    <circle cx="27" cy="20" r="3" fill="#1a3d27" stroke="#4ade80" stroke-width="1"/>
+    <circle cx="30" cy="22" r="2.5" fill="#1a3d27" stroke="#4ade80" stroke-width="1"/>
+    <circle cx="25" cy="23" r="2" fill="#1a3d27" stroke="#4ade80" stroke-width="1"/>
+    <line x1="27" y1="23" x2="27" y2="28" stroke="#4ade80" stroke-width="1.2" stroke-linecap="round"/>
+    <!-- フォーク -->
+    <line x1="8" y1="18" x2="8" y2="34" stroke="#fbbf24" stroke-width="1.2" stroke-linecap="round"/>
+    <line x1="6" y1="18" x2="6" y2="23" stroke="#fbbf24" stroke-width="1" stroke-linecap="round"/>
+    <line x1="10" y1="18" x2="10" y2="23" stroke="#fbbf24" stroke-width="1" stroke-linecap="round"/>
+  </svg>`,
+
+  t09: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 食後ウォーク + 階段 -->
+    <!-- 階段 -->
+    <rect x="5" y="28" width="10" height="6" rx="1" fill="#333"/>
+    <rect x="13" y="22" width="10" height="12" rx="1" fill="#3a3a3a"/>
+    <rect x="21" y="16" width="10" height="18" rx="1" fill="#444"/>
+    <!-- 人物(歩き) -->
+    <circle cx="27" cy="10" r="3.5" fill="#888780"/>
+    <line x1="27" y1="13.5" x2="27" y2="21" stroke="#888780" stroke-width="2.2" stroke-linecap="round"/>
+    <line x1="27" y1="16" x2="23" y2="20" stroke="#888780" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="27" y1="16" x2="31" y2="19" stroke="#888780" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="27" y1="21" x2="23" y2="27" stroke="#888780" stroke-width="2" stroke-linecap="round"/>
+    <line x1="27" y1="21" x2="30" y2="26" stroke="#888780" stroke-width="2" stroke-linecap="round"/>
+    <!-- 矢印下向き(階段降りる) -->
+    <path d="M15 14 L15 10 L11 14" stroke="#4ade80" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+
+  t10: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- ヒップシフト: 座って片側に体重移動 -->
+    <rect x="8" y="25" width="22" height="2.5" rx="1" fill="#333"/>
+    <!-- 人物(傾いている) -->
+    <circle cx="20" cy="11" r="3.5" fill="#a78bfa"/>
+    <!-- 胴体(少し左傾き) -->
+    <path d="M20 14.5 Q17 20 16 25" stroke="#a78bfa" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <!-- 右側(浮いてる) -->
+    <ellipse cx="22" cy="25" rx="4" ry="2" fill="#a78bfa" opacity="0.4"/>
+    <!-- 左側(乗ってる) -->
+    <ellipse cx="16" cy="25" rx="4" ry="2.5" fill="#a78bfa"/>
+    <!-- 矢印で移動方向 -->
+    <path d="M26 19 L22 22" stroke="#4ade80" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M22 22 L24 24 L20 23" stroke="#4ade80" stroke-width="1" fill="none"/>
+    <!-- 足 -->
+    <line x1="14" y1="27" x2="12" y2="35" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+    <line x1="20" y1="27" x2="22" y2="35" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+  </svg>`,
+
+  t11: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- カーフレイズ着席版 -->
+    <rect x="8" y="26" width="22" height="2.5" rx="1" fill="#333"/>
+    <!-- 脚 sitting -->
+    <rect x="12" y="26" width="5" height="10" rx="2" fill="#4ade80"/>
+    <rect x="21" y="26" width="5" height="10" rx="2" fill="#4ade80"/>
+    <!-- かかと浮き -->
+    <ellipse cx="14.5" cy="36" rx="4" ry="2" fill="#4ade80"/>
+    <ellipse cx="23.5" cy="36" rx="4" ry="2" fill="#4ade80"/>
+    <!-- かかとが浮いているイメージ -->
+    <ellipse cx="11" cy="34" rx="2" ry="1.2" fill="#4ade80" opacity="0.25"/>
+    <ellipse cx="20" cy="34" rx="2" ry="1.2" fill="#4ade80" opacity="0.25"/>
+    <!-- 上矢印 -->
+    <path d="M29 24 L29 14" stroke="#4ade80" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M26.5 17 L29 14 L31.5 17" stroke="#4ade80" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </svg>`,
+
+  t12: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- スクワット: 立ち膝曲げ -->
+    <circle cx="20" cy="7" r="4" fill="#a78bfa"/>
+    <!-- 胴体 -->
+    <line x1="20" y1="11" x2="20" y2="20" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- 腕 -->
+    <line x1="20" y1="14" x2="14" y2="18" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+    <line x1="20" y1="14" x2="26" y2="18" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+    <!-- 膝曲がっている -->
+    <path d="M20 20 Q15 27 13 34" stroke="#a78bfa" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+    <path d="M20 20 Q25 27 27 34" stroke="#a78bfa" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+    <!-- 地面 -->
+    <line x1="8" y1="36" x2="32" y2="36" stroke="#333" stroke-width="1.5"/>
+    <!-- 膝の角度マーク -->
+    <path d="M15 27 Q17 25 19 27" stroke="#4ade80" stroke-width="1" fill="none"/>
+    <path d="M25 27 Q23 25 21 27" stroke="#4ade80" stroke-width="1" fill="none"/>
+  </svg>`,
+
+  t13: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 腹圧アイソメトリクス2回目: 同じ動作 -->
+    <rect x="8" y="26" width="22" height="2.5" rx="1" fill="#333"/>
+    <circle cx="19" cy="11" r="3.5" fill="#a78bfa"/>
+    <rect x="14" y="14.5" width="10" height="12" rx="3" fill="#a78bfa"/>
+    <path d="M14 20 Q19 17 24 20" stroke="#4ade80" stroke-width="1.5" fill="none"/>
+    <path d="M14 22.5 Q19 19.5 24 22.5" stroke="#4ade80" stroke-width="1.5" fill="none"/>
+    <line x1="16" y1="26.5" x2="14" y2="34" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+    <line x1="22" y1="26.5" x2="24" y2="34" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+    <text x="29" y="14" font-size="10" fill="#a78bfa" font-family="monospace">×2</text>
+  </svg>`,
+
+  t14: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 足首回し: 足首の円回転 -->
+    <!-- 足 -->
+    <rect x="16" y="8" width="6" height="16" rx="3" fill="#4ade80"/>
+    <!-- 足首関節 -->
+    <circle cx="19" cy="25" r="4" fill="#4ade80"/>
+    <!-- 足先 -->
+    <ellipse cx="19" cy="32" rx="6" ry="3.5" fill="#1a3d27" stroke="#4ade80" stroke-width="1.2"/>
+    <!-- 回転矢印 -->
+    <path d="M10 28 Q10 20 19 20 Q28 20 28 28 Q28 34 19 34" stroke="#4ade80" stroke-width="1.3" fill="none" stroke-dasharray="3,2"/>
+    <path d="M10 28 L8 25 L12 26" stroke="#4ade80" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  t15: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 午後水分確認: 半分空いたボトル + OK -->
+    <rect x="12" y="12" width="11" height="22" rx="3" fill="#0f2040" stroke="#60a5fa" stroke-width="1.3"/>
+    <rect x="14" y="8" width="7" height="5" rx="2" fill="#60a5fa"/>
+    <!-- 半分の水 -->
+    <rect x="13.5" y="24" width="9" height="9" rx="2" fill="#1e4080"/>
+    <path d="M13.5 24 Q17.5 22 23.5 24" stroke="#60a5fa" stroke-width="1" fill="none"/>
+    <!-- 午後マーク PM -->
+    <text x="26" y="20" font-size="9" fill="#60a5fa" font-family="monospace">PM</text>
+    <!-- チェック -->
+    <circle cx="29" cy="30" r="6" fill="#1a3d27" stroke="#4ade80" stroke-width="1.3"/>
+    <path d="M25.5 30 L28 32.5 L32.5 27" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </svg>`,
+
+  t16: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 足指グーパー(END): 足 + 指閉じている(グー) -->
+    <ellipse cx="20" cy="28" rx="11" ry="7" fill="#1a3d27" stroke="#4ade80" stroke-width="1.2"/>
+    <!-- つま先丸く閉じている(グー) -->
+    <ellipse cx="13" cy="22" rx="2.5" ry="2" fill="#4ade80"/>
+    <ellipse cx="18" cy="20.5" rx="2.5" ry="2" fill="#4ade80"/>
+    <ellipse cx="23" cy="20.5" rx="2.5" ry="2" fill="#4ade80"/>
+    <ellipse cx="27.5" cy="22" rx="2" ry="1.8" fill="#4ade80"/>
+    <ellipse cx="20" cy="33" rx="8" ry="4" fill="#1a3d27" stroke="#4ade80" stroke-width="1"/>
+    <!-- ENDタグ -->
+    <text x="26" y="12" font-size="8" fill="#4ade80" font-family="monospace">END</text>
+  </svg>`,
+
+  t17: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 肩甲骨寄せ: 背面から見た肩甲骨 -->
+    <!-- 背中(後ろ姿) -->
+    <ellipse cx="20" cy="22" rx="10" ry="12" fill="#1e1535" stroke="#a78bfa" stroke-width="1.2"/>
+    <!-- 頭 -->
+    <circle cx="20" cy="9" r="4" fill="#a78bfa"/>
+    <!-- 肩甲骨 左 -->
+    <path d="M12 18 Q11 23 14 26 Q16 24 15 19 Z" fill="#a78bfa" opacity="0.8"/>
+    <!-- 肩甲骨 右 -->
+    <path d="M28 18 Q29 23 26 26 Q24 24 25 19 Z" fill="#a78bfa" opacity="0.8"/>
+    <!-- 寄せる矢印 -->
+    <path d="M15 22 L18 22" stroke="#4ade80" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M25 22 L22 22" stroke="#4ade80" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M17 20 L19 22 L17 24" stroke="#4ade80" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M23 20 L21 22 L23 24" stroke="#4ade80" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+
+  t18: `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 水分1L確認: ボトル満タン + 1L表示 -->
+    <rect x="11" y="11" width="12" height="23" rx="3" fill="#0f2040" stroke="#60a5fa" stroke-width="1.3"/>
+    <rect x="13" y="7" width="8" height="5" rx="2" fill="#60a5fa"/>
+    <!-- 満タンの水 -->
+    <rect x="12.5" y="12" width="10" height="21" rx="2" fill="#1e4080"/>
+    <path d="M12.5 14 Q17 12 22.5 14" stroke="#60a5fa" stroke-width="1" fill="none"/>
+    <!-- 1L テキスト -->
+    <text x="26" y="22" font-size="11" fill="#60a5fa" font-family="monospace" font-weight="500">1L</text>
+    <!-- チェック -->
+    <circle cx="29" cy="31" r="6" fill="#1a3d27" stroke="#4ade80" stroke-width="1.3"/>
+    <path d="M25.5 31 L28 33.5 L32.5 28" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </svg>`
+};
+
+const TODOS=[
+  {id:'t01',time:'10:00',label:'足指グー・パー 50回',cat:'run',sec:'START (10:00)'},
+  {id:'t02',time:'10:00',label:'骨盤を立てて姿勢セット',cat:'body',sec:'START (10:00)'},
+  {id:'t03',time:'10:00',label:'500mlボトル置く・200ml飲む',cat:'water',sec:'START (10:00)'},
+  {id:'t04',time:'11:00',label:'腹圧アイソメトリクス 10秒×10回',cat:'body',sec:'INTERVAL 01 (11:00)'},
+  {id:'t05',time:'11:00',label:'着席カーフレイズ 20回×2',cat:'run',sec:'INTERVAL 01 (11:00)'},
+  {id:'t06',time:'11:00',label:'立ち上がって歩く 2〜3分',cat:'work',sec:'INTERVAL 01 (11:00)'},
+  {id:'t07',time:'11:00',label:'500ml飲み切り確認',cat:'water',sec:'INTERVAL 01 (11:00)'},
+  {id:'t08',time:'12:00',label:'タンパク質＋野菜中心で食べる',cat:'lunch',sec:'LUNCH (12:00-13:00)'},
+  {id:'t09',time:'12:00',label:'食後ウォーク 10〜15分（階段◎）',cat:'run',sec:'LUNCH (12:00-13:00)'},
+  {id:'t10',time:'14:00',label:'着席ヒップシフト 左右各10回',cat:'body',sec:'INTERVAL 02 (14:00)'},
+  {id:'t11',time:'14:00',label:'着席カーフレイズ 20回×2',cat:'run',sec:'INTERVAL 02 (14:00)'},
+  {id:'t12',time:'14:00',label:'その場スクワット 5回',cat:'body',sec:'INTERVAL 02 (14:00)'},
+  {id:'t13',time:'15:30',label:'腹圧アイソメトリクス 10秒×10回',cat:'body',sec:'INTERVAL 03 (15:30)'},
+  {id:'t14',time:'15:30',label:'足首回し 内外各10回',cat:'run',sec:'INTERVAL 03 (15:30)'},
+  {id:'t15',time:'15:30',label:'午後500ml飲み切り確認',cat:'water',sec:'INTERVAL 03 (15:30)'},
+  {id:'t16',time:'17:00',label:'足指グー・パー 50回',cat:'run',sec:'END (17:00)'},
+  {id:'t17',time:'17:00',label:'肩甲骨寄せ 3秒×10回',cat:'body',sec:'END (17:00)'},
+  {id:'t18',time:'17:00',label:'1日水分1L以上を確認',cat:'water',sec:'END (17:00)'},
+];
+const CAT={run:'足底',body:'体幹',water:'水分',work:'動作',lunch:'食事'};
+let checks={};
+TODOS.forEach(t=>checks[t.id]=false);
+function todayKey(){return new Date().toISOString().slice(0,10)}
+function fmtDate(iso){const d=new Date(iso+'T00:00:00');return d.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'})}
+function loadToday(){const s=localStorage.getItem('runner_'+todayKey());if(s){const d=JSON.parse(s);checks=d.checks||checks;document.getElementById('note-input').value=d.note||'';}}
+function autoSave(){localStorage.setItem('runner_'+todayKey(),JSON.stringify({checks,note:document.getElementById('note-input').value,date:todayKey()}));}
+function saveDay(){autoSave();const m=document.getElementById('saved-msg');m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);}
+function toggle(id){checks[id]=!checks[id];autoSave();render();}
+function updateStats(){
+  const done=Object.values(checks).filter(Boolean).length;
+  const pct=Math.round(done/TODOS.length*100);
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-pct').textContent=pct+'%';
+  document.getElementById('prog').style.width=pct+'%';
+  document.getElementById('s-pct').style.color=pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--text2)';
+}
+function render(){
+  updateStats();
+  let html='',last='';
+  TODOS.forEach(t=>{
+    if(t.sec!==last){html+=`<div class="section-header"><span class="section-label">${t.sec}</span><span class="section-line"></span></div>`;last=t.sec;}
+    const done=checks[t.id];
+    html+=`<div class="todo-row${done?' done':''}" onclick="toggle('${t.id}')">
+      <div class="todo-illus">${ILLUS[t.id]||''}</div>
+      <div class="todo-main"><div class="todo-text">${t.label}</div></div>
+      <div class="todo-right"><div class="cb${done?' checked':''}">${done?'✓':''}</div><span class="cat-badge cat-${t.cat}">${CAT[t.cat]}</span></div>
+    </div>`;
+  });
+  document.getElementById('todo-list').innerHTML=html;
+}
+function showTab(tab){
+  const iT=tab==='today';
+  document.getElementById('today-view').classList.toggle('hidden',!iT);
+  document.getElementById('history-view').classList.toggle('active',!iT);
+  document.getElementById('tab-today').classList.toggle('active',iT);
+  document.getElementById('tab-hist').classList.toggle('active',!iT);
+  if(!iT)renderHistory();
+}
+function toggleHist(uid){document.getElementById(uid).classList.toggle('open');document.getElementById('chev-'+uid).classList.toggle('open');}
+function deleteDay(key,e){e.stopPropagation();if(confirm('この日の記録を削除しますか？')){localStorage.removeItem(key);renderHistory();}}
+function renderHistory(){
+  const keys=[];
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('runner_'))keys.push(k);}
+  keys.sort().reverse();
+  const c=document.getElementById('hist-list');
+  if(!keys.length){c.innerHTML='<div class="hist-empty">// no history yet</div>';return;}
+  let html='';
+  keys.forEach((k,idx)=>{
+    const data=JSON.parse(localStorage.getItem(k));
+    const done=data.checks?Object.values(data.checks).filter(Boolean).length:0;
+    const pct=Math.round(done/TODOS.length*100);
+    const uid='h'+idx;
+    html+=`<div class="hist-day"><div class="hist-day-header" onclick="toggleHist('${uid}')"><span class="hist-date">${fmtDate(data.date||k.replace('runner_',''))}</span><span class="hist-count">${done}/${TODOS.length}</span><span class="hist-pct">${pct}%</span><button class="delete-btn" onclick="deleteDay('${k}',event)">削除</button><span class="chevron" id="chev-${uid}">▼</span></div><div class="hist-bar"><div class="hist-bar-fill" style="width:${pct}%"></div></div><div class="hist-body" id="${uid}"><div class="hist-items">`;
+    TODOS.forEach(t=>{const d=data.checks&&data.checks[t.id];html+=`<span class="hist-item ${d?'done':'miss'}">${t.label}</span>`;});
+    html+='</div>';
+    if(data.note&&data.note.trim())html+=`<div class="hist-note">// ${data.note}</div>`;
+    html+='</div></div>';
+  });
+  c.innerHTML=html;
+}
+const d=new Date();
+document.getElementById('hdate').textContent=d.toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'.');
+document.getElementById('note-input').addEventListener('input',autoSave);
+loadToday();render();
+</script>
+</body>
+</html>
