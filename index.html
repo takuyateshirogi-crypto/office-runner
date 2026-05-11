@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Office Runner">
+<title>Office Runner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f0f0f;--surface:#161616;--surface2:#1e1e1e;--surface3:#252525;
+  --border:#2a2a2a;--border2:#333;
+  --text:#e8e8e8;--text2:#888;--text3:#555;
+  --green:#4ade80;--green-dim:#1a3d27;
+  --amber:#fbbf24;--amber-dim:#3d2e0a;
+  --blue:#60a5fa;--blue-dim:#0f2040;
+  --purple:#a78bfa;--purple-dim:#1e1535;
+  --font-mono:'DM Mono',monospace;
+  --font-body:'Noto Sans JP',sans-serif;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.6}
+.app{max-width:600px;margin:0 auto;padding:1.5rem 1rem 6rem}
+.header{display:flex;align-items:flex-start;gap:12px;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.header-left{flex:1}
+.header-title{font-family:var(--font-mono);font-size:11px;color:var(--text3);letter-spacing:0.12em;margin-bottom:2px}
+.header-date{font-family:var(--font-mono);font-size:18px;font-weight:500;color:var(--text)}
+.header-actions{display:flex;gap:6px;margin-top:6px}
+.btn-tab{font-family:var(--font-mono);font-size:11px;padding:6px 13px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;-webkit-appearance:none}
+.btn-tab.active{background:var(--green-dim);color:var(--green);border-color:var(--green-dim)}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px}
+.stat-val{font-family:var(--font-mono);font-size:22px;font-weight:500}
+.stat-lbl{font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:0.08em}
+.progress-bar{height:2px;background:var(--border);border-radius:2px;margin-bottom:1.5rem;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width 0.4s ease}
+.section-header{display:flex;align-items:center;gap:8px;margin:1.2rem 0 0.5rem}
+.section-label{font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:0.1em;white-space:nowrap}
+.section-line{flex:1;height:1px;background:var(--border)}
+.todo-row{display:grid;grid-template-columns:26px 1fr auto;align-items:start;gap:10px;padding:11px 10px;border-radius:8px;margin-bottom:5px;cursor:pointer;user-select:none}
+.todo-row:active{background:var(--surface2)}
+.todo-row.done{opacity:0.4}
+.todo-row.done .todo-text{text-decoration:line-through;color:var(--text3)}
+.cb{width:20px;height:20px;border-radius:4px;border:1.5px solid var(--border2);margin-top:1px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px}
+.cb.checked{background:var(--green);border-color:var(--green);color:#000}
+.todo-text{font-size:13px;color:var(--text);line-height:1.5}
+.cat-badge{font-family:var(--font-mono);font-size:10px;padding:2px 7px;border-radius:3px;white-space:nowrap;margin-top:3px}
+.cat-run{background:var(--green-dim);color:var(--green)}
+.cat-body{background:var(--purple-dim);color:var(--purple)}
+.cat-water{background:var(--blue-dim);color:var(--blue)}
+.cat-work{background:var(--surface3);color:var(--text2)}
+.cat-lunch{background:var(--amber-dim);color:var(--amber)}
+.note-area{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border)}
+.note-label{font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:0.1em;margin-bottom:8px}
+textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:14px;padding:12px;resize:vertical;min-height:90px;outline:none;line-height:1.6;-webkit-appearance:none}
+textarea:focus{border-color:var(--border2)}
+.save-row{display:flex;justify-content:flex-end;align-items:center;margin-top:8px;gap:10px}
+.saved-msg{font-family:var(--font-mono);font-size:11px;color:var(--green);opacity:0;transition:opacity 0.3s}
+.saved-msg.show{opacity:1}
+.btn-save{font-family:var(--font-mono);font-size:12px;padding:9px 22px;background:var(--green-dim);color:var(--green);border:1px solid var(--green-dim);border-radius:6px;cursor:pointer;-webkit-appearance:none}
+.btn-save:active{background:var(--green);color:#000}
+.history-view{display:none}
+.history-view.active{display:block}
+.today-view.hidden{display:none}
+.hist-empty{font-family:var(--font-mono);font-size:12px;color:var(--text3);text-align:center;padding:3rem 0}
+.hist-day{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.hist-day-header{display:flex;align-items:center;gap:8px;padding:13px 14px;cursor:pointer;user-select:none}
+.hist-day-header:active{background:var(--surface2)}
+.hist-date{font-family:var(--font-mono);font-size:13px;font-weight:500;flex:1}
+.hist-count{font-family:var(--font-mono);font-size:11px;color:var(--text3)}
+.hist-pct{font-family:var(--font-mono);font-size:12px;color:var(--green);min-width:38px;text-align:right}
+.hist-bar{height:2px;background:var(--border);margin:0 14px}
+.hist-bar-fill{height:100%;background:var(--green)}
+.hist-body{padding:12px 14px;border-top:1px solid var(--border);display:none}
+.hist-body.open{display:block}
+.hist-note{font-size:12px;color:var(--text2);margin-top:10px;padding:10px 12px;background:var(--surface2);border-radius:6px;white-space:pre-wrap;border-left:2px solid var(--border2);line-height:1.6}
+.hist-items{display:flex;flex-wrap:wrap;gap:4px}
+.hist-item{font-size:11px;padding:3px 8px;border-radius:3px}
+.hist-item.done{background:var(--green-dim);color:var(--green)}
+.hist-item.miss{background:var(--surface3);color:var(--text3);text-decoration:line-through}
+.chevron{font-size:11px;color:var(--text3);transition:transform 0.2s}
+.chevron.open{transform:rotate(180deg)}
+.delete-btn{font-family:var(--font-mono);font-size:10px;color:var(--text3);background:transparent;border:1px solid var(--border);border-radius:3px;padding:3px 8px;cursor:pointer;-webkit-appearance:none}
+.delete-btn:active{color:#E24B4A;border-color:#E24B4A}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-title">OFFICE RUNNER</div>
+      <div class="header-date" id="hdate"></div>
+      <div class="header-actions">
+        <button class="btn-tab active" id="tab-today" onclick="showTab('today')">TODAY</button>
+        <button class="btn-tab" id="tab-hist" onclick="showTab('history')">HISTORY</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="today-view" id="today-view">
+    <div class="summary">
+      <div class="stat"><div class="stat-val" id="s-done" style="color:var(--green)">0</div><div class="stat-lbl">DONE</div></div>
+      <div class="stat"><div class="stat-val" id="s-total" style="color:var(--text2)">18</div><div class="stat-lbl">TOTAL</div></div>
+      <div class="stat"><div class="stat-val" id="s-pct" style="color:var(--amber)">0%</div><div class="stat-lbl">RATE</div></div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+    <div id="todo-list"></div>
+    <div class="note-area">
+      <div class="note-label">// NOTE — 今日の気づき・体感</div>
+      <textarea id="note-input" placeholder="今日のオフィスでの体感、気になったこと、足の状態など..."></textarea>
+      <div class="save-row">
+        <span class="saved-msg" id="saved-msg">saved.</span>
+        <button class="btn-save" onclick="saveDay()">SAVE DAY</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="history-view" id="history-view">
+    <div id="hist-list"></div>
+  </div>
+</div>
+
+<script>
+const TODOS=[
+  {id:'t01',time:'10:00',label:'足指グー・パー 50回',cat:'run',sec:'START (10:00)'},
+  {id:'t02',time:'10:00',label:'骨盤を立てて姿勢セット',cat:'body',sec:'START (10:00)'},
+  {id:'t03',time:'10:00',label:'500mlボトル置く・200ml飲む',cat:'water',sec:'START (10:00)'},
+  {id:'t04',time:'11:00',label:'腹圧アイソメトリクス 10秒×10回',cat:'body',sec:'INTERVAL 01 (11:00)'},
+  {id:'t05',time:'11:00',label:'着席カーフレイズ 20回×2',cat:'run',sec:'INTERVAL 01 (11:00)'},
+  {id:'t06',time:'11:00',label:'立ち上がって歩く 2〜3分',cat:'work',sec:'INTERVAL 01 (11:00)'},
+  {id:'t07',time:'11:00',label:'500ml飲み切り確認',cat:'water',sec:'INTERVAL 01 (11:00)'},
+  {id:'t08',time:'12:00',label:'タンパク質＋野菜中心で食べる',cat:'lunch',sec:'LUNCH (12:00-13:00)'},
+  {id:'t09',time:'12:00',label:'食後ウォーク 10〜15分（階段◎）',cat:'run',sec:'LUNCH (12:00-13:00)'},
+  {id:'t10',time:'14:00',label:'着席ヒップシフト 左右各10回',cat:'body',sec:'INTERVAL 02 (14:00)'},
+  {id:'t11',time:'14:00',label:'着席カーフレイズ 20回×2',cat:'run',sec:'INTERVAL 02 (14:00)'},
+  {id:'t12',time:'14:00',label:'その場スクワット 5回',cat:'body',sec:'INTERVAL 02 (14:00)'},
+  {id:'t13',time:'15:30',label:'腹圧アイソメトリクス 10秒×10回',cat:'body',sec:'INTERVAL 03 (15:30)'},
+  {id:'t14',time:'15:30',label:'足首回し 内外各10回',cat:'run',sec:'INTERVAL 03 (15:30)'},
+  {id:'t15',time:'15:30',label:'午後500ml飲み切り確認',cat:'water',sec:'INTERVAL 03 (15:30)'},
+  {id:'t16',time:'17:00',label:'足指グー・パー 50回',cat:'run',sec:'END (17:00)'},
+  {id:'t17',time:'17:00',label:'肩甲骨寄せ 3秒×10回',cat:'body',sec:'END (17:00)'},
+  {id:'t18',time:'17:00',label:'1日水分1L以上を確認',cat:'water',sec:'END (17:00)'},
+];
+const CAT={run:'足底',body:'体幹',water:'水分',work:'動作',lunch:'食事'};
+let checks={};
+TODOS.forEach(t=>checks[t.id]=false);
+
+function todayKey(){return new Date().toISOString().slice(0,10)}
+function fmtDate(iso){
+  const d=new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+}
+function loadToday(){
+  const s=localStorage.getItem('runner_'+todayKey());
+  if(s){const d=JSON.parse(s);checks=d.checks||checks;document.getElementById('note-input').value=d.note||'';}
+}
+function autoSave(){
+  localStorage.setItem('runner_'+todayKey(),JSON.stringify({checks,note:document.getElementById('note-input').value,date:todayKey()}));
+}
+function saveDay(){
+  autoSave();
+  const m=document.getElementById('saved-msg');
+  m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);
+}
+function toggle(id){checks[id]=!checks[id];autoSave();render();}
+function updateStats(){
+  const done=Object.values(checks).filter(Boolean).length;
+  const pct=Math.round(done/TODOS.length*100);
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-pct').textContent=pct+'%';
+  document.getElementById('prog').style.width=pct+'%';
+  document.getElementById('s-pct').style.color=pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--text2)';
+}
+function render(){
+  updateStats();
+  let html='',last='';
+  TODOS.forEach(t=>{
+    if(t.sec!==last){html+=`<div class="section-header"><span class="section-label">${t.sec}</span><span class="section-line"></span></div>`;last=t.sec;}
+    const done=checks[t.id];
+    html+=`<div class="todo-row${done?' done':''}" onclick="toggle('${t.id}')"><div class="cb${done?' checked':''}">${done?'✓':''}</div><div class="todo-text">${t.label}</div><span class="cat-badge cat-${t.cat}">${CAT[t.cat]}</span></div>`;
+  });
+  document.getElementById('todo-list').innerHTML=html;
+}
+function showTab(tab){
+  const iT=tab==='today';
+  document.getElementById('today-view').classList.toggle('hidden',!iT);
+  document.getElementById('history-view').classList.toggle('active',!iT);
+  document.getElementById('tab-today').classList.toggle('active',iT);
+  document.getElementById('tab-hist').classList.toggle('active',!iT);
+  if(!iT)renderHistory();
+}
+function toggleHist(uid){
+  document.getElementById(uid).classList.toggle('open');
+  document.getElementById('chev-'+uid).classList.toggle('open');
+}
+function deleteDay(key,e){
+  e.stopPropagation();
+  if(confirm('この日の記録を削除しますか？')){localStorage.removeItem(key);renderHistory();}
+}
+function renderHistory(){
+  const keys=[];
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('runner_'))keys.push(k);}
+  keys.sort().reverse();
+  const c=document.getElementById('hist-list');
+  if(!keys.length){c.innerHTML='<div class="hist-empty">// no history yet</div>';return;}
+  let html='';
+  keys.forEach((k,idx)=>{
+    const data=JSON.parse(localStorage.getItem(k));
+    const done=data.checks?Object.values(data.checks).filter(Boolean).length:0;
+    const pct=Math.round(done/TODOS.length*100);
+    const uid='h'+idx;
+    html+=`<div class="hist-day">
+      <div class="hist-day-header" onclick="toggleHist('${uid}')">
+        <span class="hist-date">${fmtDate(data.date||k.replace('runner_',''))}</span>
+        <span class="hist-count">${done}/${TODOS.length}</span>
+        <span class="hist-pct">${pct}%</span>
+        <button class="delete-btn" onclick="deleteDay('${k}',event)">削除</button>
+        <span class="chevron" id="chev-${uid}">▼</span>
+      </div>
+      <div class="hist-bar"><div class="hist-bar-fill" style="width:${pct}%"></div></div>
+      <div class="hist-body" id="${uid}"><div class="hist-items">`;
+    TODOS.forEach(t=>{const d=data.checks&&data.checks[t.id];html+=`<span class="hist-item ${d?'done':'miss'}">${t.label}</span>`;});
+    html+='</div>';
+    if(data.note&&data.note.trim())html+=`<div class="hist-note">// ${data.note}</div>`;
+    html+='</div></div>';
+  });
+  c.innerHTML=html;
+}
+const d=new Date();
+document.getElementById('hdate').textContent=d.toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'.');
+document.getElementById('note-input').addEventListener('input',autoSave);
+loadToday();render();
+</script>
+</body>
+</html>
